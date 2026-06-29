@@ -4,6 +4,7 @@
 #include <stdint.h>
 #include "stm32F401Re.h"
 
+
 /*
  * GPIO pin configuration structure
  */
@@ -58,7 +59,8 @@ void GPIO_ToggleOutputPin(GPIO_RegStruct_t *pGPIOx, uint8_t PinNumber);
 /*
  * IRQ configuration and ISR handling
  */
-void GPIO_IRQConfig(uint8_t IRQNumber, uint8_t IRQPriority, uint8_t EnorDi);
+void GPIO_IRQInterruptConfig(uint8_t IRQNumber, uint8_t EnorDi);
+void GPIO_IRQPriorityConfig(uint8_t IRQNumber, uint8_t IRQPriority);
 void GPIO_IRQHandling(uint8_t PinNumber);
 
 
@@ -145,7 +147,7 @@ void GPIO_IRQHandling(uint8_t PinNumber);
 
 
 
-*/
+
 
 
 

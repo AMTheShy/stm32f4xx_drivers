@@ -8,6 +8,41 @@
 #ifndef INC_STM32F401RE_H_
 #define INC_STM32F401RE_H_
 
+ /*
+  * ARM Cortex-M4 processor specific details
+  * ----------------------------------------------------------------------------------------------------------------------------------------------
+  */
+
+  /*
+   * NVIC ISERx register addresses
+   * ISER = Interrupt Set-Enable Register
+   */
+
+#define NVIC_ISER0        ((vo uint32_t*)0xE000E100)
+#define NVIC_ISER1        ((vo uint32_t*)0xE000E104)
+#define NVIC_ISER2        ((vo uint32_t*)0xE000E108)
+#define NVIC_ISER3        ((vo uint32_t*)0xE000E10C)
+
+
+   /*
+    * NVIC ICERx register addresses
+    * ICER = Interrupt Clear-Enable Register
+    */
+
+#define NVIC_ICER0        ((vo uint32_t*)0xE000E180)
+#define NVIC_ICER1        ((vo uint32_t*)0xE000E184)
+#define NVIC_ICER2        ((vo uint32_t*)0xE000E188)
+#define NVIC_ICER3        ((vo uint32_t*)0xE000E18C)
+
+
+#define NVIC_PR_BASEADDR    ((volatile uint32_t*)0xE000E400U)
+
+#define NO_PR_BITS_IMPLEMENTED    4
+
+
+//--------------------------------------------------------------------------------------------------------------------------------------------
+
+
 #include<stdint.h>
 #define vo volatile
 
@@ -110,9 +145,8 @@ typedef struct{
 
 	vo uint32_t  LCKR;
 
-	vo uint32_t  AFRL;
+	vo uint32_t  AFR[2];        //[0]-> low/[1]->high
 
-	vo uint32_t  AFRH;
 
 }GPIO_RegStruct_t;
 
@@ -177,86 +211,195 @@ typedef struct
 #define RCC        ((RCC_RegStruct_t *)RCC_BASEADDR)
 
 
+/*EXTI Register Structure definition*/
+
+typedef struct
+{
+    vo uint32_t IMR;        /* 0x00: Interrupt mask register */
+    vo uint32_t EMR;        /* 0x04: Event mask register */
+    vo uint32_t RTSR;       /* 0x08: Rising trigger selection register */
+    vo uint32_t FTSR;       /* 0x0C: Falling trigger selection register */
+    vo uint32_t SWIER;      /* 0x10: Software interrupt event register */
+    vo uint32_t PR;         /* 0x14: Pending register */
+
+} EXTI_RegStruct_t;
+
+#define EXTI       ((EXTI_RegStruct_t *)EXTI_BASEADDR)
+
+
+/* SYSCFG Register Structure definition
+ *
+ */
+
+typedef struct
+{
+    vo uint32_t MEMRMP;          /* 0x00: SYSCFG memory remap register */
+    vo uint32_t PMC;             /* 0x04: SYSCFG peripheral mode configuration register */
+    vo uint32_t EXTICR[4];       /* 0x08 - 0x14: SYSCFG external interrupt configuration registers 1-4 */
+    uint32_t    RESERVED0[2];    /* 0x18 - 0x1C: Reserved */
+    vo uint32_t CMPCR;           /* 0x20: Compensation cell control register */
+
+} SYSCFG_RegStruct_t;
+
+#define SYSCFG       ((SYSCFG_RegStruct_t *)SYSCFG_BASEADDR)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 /* Clock enable macros for GPIO peripherals */
 
-#define GPIOA_CLOCK_EN      (RCC->AHB1ENR |= (1U << 0))
-#define GPIOB_CLOCK_EN      (RCC->AHB1ENR |= (1U << 1))
-#define GPIOC_CLOCK_EN      (RCC->AHB1ENR |= (1U << 2))
-#define GPIOD_CLOCK_EN      (RCC->AHB1ENR |= (1U << 3))
-#define GPIOE_CLOCK_EN      (RCC->AHB1ENR |= (1U << 4))
-#define GPIOH_CLOCK_EN      (RCC->AHB1ENR |= (1U << 7))
+#define GPIOA_CLOCK_EN()      (RCC->AHB1ENR |= (1U << 0))
+#define GPIOB_CLOCK_EN()      (RCC->AHB1ENR |= (1U << 1))
+#define GPIOC_CLOCK_EN()      (RCC->AHB1ENR |= (1U << 2))
+#define GPIOD_CLOCK_EN()      (RCC->AHB1ENR |= (1U << 3))
+#define GPIOE_CLOCK_EN()      (RCC->AHB1ENR |= (1U << 4))
+#define GPIOH_CLOCK_EN()      (RCC->AHB1ENR |= (1U << 7))
 
 
 /* Clock enable macros for SPI peripherals */
 
-#define SPI1_CLOCK_EN       (RCC->APB2ENR |= (1U << 12))
-#define SPI2_CLOCK_EN       (RCC->APB1ENR |= (1U << 14))
-#define SPI3_CLOCK_EN       (RCC->APB1ENR |= (1U << 15))
-#define SPI4_CLOCK_EN       (RCC->APB2ENR |= (1U << 13))
+#define SPI1_CLOCK_EN()       (RCC->APB2ENR |= (1U << 12))
+#define SPI2_CLOCK_EN()       (RCC->APB1ENR |= (1U << 14))
+#define SPI3_CLOCK_EN()       (RCC->APB1ENR |= (1U << 15))
+#define SPI4_CLOCK_EN()       (RCC->APB2ENR |= (1U << 13))
 
 
 /* Clock enable macros for USART peripherals */
 
-#define USART1_CLOCK_EN     (RCC->APB2ENR |= (1U << 4))
-#define USART2_CLOCK_EN     (RCC->APB1ENR |= (1U << 17))
-#define USART6_CLOCK_EN     (RCC->APB2ENR |= (1U << 5))
+#define USART1_CLOCK_EN()     (RCC->APB2ENR |= (1U << 4))
+#define USART2_CLOCK_EN()     (RCC->APB1ENR |= (1U << 17))
+#define USART6_CLOCK_EN()     (RCC->APB2ENR |= (1U << 5))
 
 
 /* Clock enable macros for I2C peripherals */
 
-#define I2C1_CLOCK_EN       (RCC->APB1ENR |= (1U << 21))
-#define I2C2_CLOCK_EN       (RCC->APB1ENR |= (1U << 22))
-#define I2C3_CLOCK_EN       (RCC->APB1ENR |= (1U << 23))
+#define I2C1_CLOCK_EN()       (RCC->APB1ENR |= (1U << 21))
+#define I2C2_CLOCK_EN()       (RCC->APB1ENR |= (1U << 22))
+#define I2C3_CLOCK_EN()       (RCC->APB1ENR |= (1U << 23))
 
 
 /* Clock enable macro for SYSCFG peripheral */
 
-#define SYSCFG_CLOCK_EN     (RCC->APB2ENR |= (1U << 14))
+#define SYSCFG_CLOCK_EN()     (RCC->APB2ENR |= (1U << 14))
+
 
 /* Clock disable macros for GPIO peripherals */
 
-#define GPIOA_CLOCK_DI      (RCC->AHB1ENR &= ~(1U << 0))
-#define GPIOB_CLOCK_DI      (RCC->AHB1ENR &= ~(1U << 1))
-#define GPIOC_CLOCK_DI      (RCC->AHB1ENR &= ~(1U << 2))
-#define GPIOD_CLOCK_DI      (RCC->AHB1ENR &= ~(1U << 3))
-#define GPIOE_CLOCK_DI      (RCC->AHB1ENR &= ~(1U << 4))
-#define GPIOH_CLOCK_DI      (RCC->AHB1ENR &= ~(1U << 7))
+#define GPIOA_CLOCK_DI()      (RCC->AHB1ENR &= ~(1U << 0))
+#define GPIOB_CLOCK_DI()      (RCC->AHB1ENR &= ~(1U << 1))
+#define GPIOC_CLOCK_DI()      (RCC->AHB1ENR &= ~(1U << 2))
+#define GPIOD_CLOCK_DI()      (RCC->AHB1ENR &= ~(1U << 3))
+#define GPIOE_CLOCK_DI()      (RCC->AHB1ENR &= ~(1U << 4))
+#define GPIOH_CLOCK_DI()      (RCC->AHB1ENR &= ~(1U << 7))
 
 
 /* Clock disable macros for SPI peripherals */
 
-#define SPI1_CLOCK_DI       (RCC->APB2ENR &= ~(1U << 12))
-#define SPI2_CLOCK_DI       (RCC->APB1ENR &= ~(1U << 14))
-#define SPI3_CLOCK_DI       (RCC->APB1ENR &= ~(1U << 15))
-#define SPI4_CLOCK_DI       (RCC->APB2ENR &= ~(1U << 13))
+#define SPI1_CLOCK_DI()       (RCC->APB2ENR &= ~(1U << 12))
+#define SPI2_CLOCK_DI()       (RCC->APB1ENR &= ~(1U << 14))
+#define SPI3_CLOCK_DI()       (RCC->APB1ENR &= ~(1U << 15))
+#define SPI4_CLOCK_DI()       (RCC->APB2ENR &= ~(1U << 13))
 
 
 /* Clock disable macros for USART peripherals */
 
-#define USART1_CLOCK_DI     (RCC->APB2ENR &= ~(1U << 4))
-#define USART2_CLOCK_DI     (RCC->APB1ENR &= ~(1U << 17))
-#define USART6_CLOCK_DI     (RCC->APB2ENR &= ~(1U << 5))
+#define USART1_CLOCK_DI()     (RCC->APB2ENR &= ~(1U << 4))
+#define USART2_CLOCK_DI()     (RCC->APB1ENR &= ~(1U << 17))
+#define USART6_CLOCK_DI()     (RCC->APB2ENR &= ~(1U << 5))
 
 
 /* Clock disable macros for I2C peripherals */
 
-#define I2C1_CLOCK_DI       (RCC->APB1ENR &= ~(1U << 21))
-#define I2C2_CLOCK_DI       (RCC->APB1ENR &= ~(1U << 22))
-#define I2C3_CLOCK_DI       (RCC->APB1ENR &= ~(1U << 23))
+#define I2C1_CLOCK_DI()       (RCC->APB1ENR &= ~(1U << 21))
+#define I2C2_CLOCK_DI()       (RCC->APB1ENR &= ~(1U << 22))
+#define I2C3_CLOCK_DI()       (RCC->APB1ENR &= ~(1U << 23))
 
 
 /* Clock disable macro for SYSCFG peripheral */
 
-#define SYSCFG_CLOCK_DI     (RCC->APB2ENR &= ~(1U << 14))
+#define SYSCFG_CLOCK_DI()     (RCC->APB2ENR &= ~(1U << 14))
+
+
+/*
+ * GPIO peripheral reset macros
+ *
+ * To reset a GPIO peripheral:
+ * 1. Set the corresponding bit in RCC_AHB1RSTR
+ * 2. Clear the same bit again
+ *
+ * Do not keep the bit set, otherwise the peripheral stays in reset state.
+ */
+
+#define GPIOA_REG_RESET()    do { (RCC->AHB1RSTR |=  (1U << 0));  (RCC->AHB1RSTR &= ~(1U << 0));  } while (0)
+#define GPIOB_REG_RESET()    do { (RCC->AHB1RSTR |=  (1U << 1));  (RCC->AHB1RSTR &= ~(1U << 1));  } while (0)
+#define GPIOC_REG_RESET()    do { (RCC->AHB1RSTR |=  (1U << 2));  (RCC->AHB1RSTR &= ~(1U << 2));  } while (0)
+#define GPIOD_REG_RESET()    do { (RCC->AHB1RSTR |=  (1U << 3));  (RCC->AHB1RSTR &= ~(1U << 3));  } while (0)
+#define GPIOE_REG_RESET()    do { (RCC->AHB1RSTR |=  (1U << 4));  (RCC->AHB1RSTR &= ~(1U << 4));  } while (0)
+#define GPIOH_REG_RESET()    do { (RCC->AHB1RSTR |=  (1U << 7));  (RCC->AHB1RSTR &= ~(1U << 7));  } while (0)
 
 
 /*General Macros
  *
  */
 
-#define ENABLE		        0
-#define DISABLE 	        1
+#define ENABLE		        1
+#define DISABLE 	        0
+
+#define SET                 1
+#define RESET               0
 
 #define GPIO_ENABLE         ENABLE
 #define GPIO_DISABLE        DISABLE
+
+#define GPIO_PIN_SET        SET
+#define GPIO_PIN_RESET      RESET
+
+ /*
+  * This macro returns the port code for a given GPIOx base address.
+  * The returned value is written into SYSCFG_EXTICR register fields.
+  *
+  * STM32F401RE EXTICR port code:
+  * GPIOA = 0000
+  * GPIOB = 0001
+  * GPIOC = 0010
+  * GPIOD = 0011
+  * GPIOE = 0100
+  * GPIOH = 0111
+  */
+
+#define GPIO_BASEADDR_TO_CODE(x)       ((x == GPIOA) ? 0U : \
+                                        (x == GPIOB) ? 1U : \
+                                        (x == GPIOC) ? 2U : \
+                                        (x == GPIOD) ? 3U : \
+                                        (x == GPIOE) ? 4U : \
+                                        (x == GPIOH) ? 7U : 0U)
+
+  /*
+   * IRQ(Interrupt Request) numbers for STM32F401RE MCU
+   *
+   * NOTE:
+   * These values come from the STM32F401 vector table in RM0368.
+   * They are used when configuring NVIC ISER/ICER/IPR registers.
+   */
+
+   /* EXTI IRQ numbers */
+#define IRQ_NO_EXTI0          6U
+#define IRQ_NO_EXTI1          7U
+#define IRQ_NO_EXTI2          8U
+#define IRQ_NO_EXTI3          9U
+#define IRQ_NO_EXTI4          10U
+#define IRQ_NO_EXTI9_5        23U
+#define IRQ_NO_EXTI15_10      40U
+
 #endif /* INC_STM32F401RE_H_ */
