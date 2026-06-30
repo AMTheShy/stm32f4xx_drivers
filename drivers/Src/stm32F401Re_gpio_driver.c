@@ -2,6 +2,7 @@
 #define stm32F401Re_gpio_driver.c
 
 #include "stm32F401Re_gpio_driver.h"
+
 /*
  * Peripheral Clock setup
  */
@@ -147,7 +148,7 @@ void GPIO_Init(GPIO_Pin_Handle_t* pGPIOHandle) {
 	}
 	else {
 	
-		
+		// init  falling/rising edge, init which line of EXTI is used, init which port is connected (ALL PINWISE)
 		if (pGPIOHandle->GPIO_pin_config.GPIO_PinMode == GPIO_MODE_IT_FT) {
 
 			EXTI->FTSR |= (1 << pGPIOHandle->GPIO_pin_config.GPIO_PinNumber);
@@ -316,18 +317,27 @@ void GPIO_IRQInterruptConfig(uint8_t IRQNumber, uint8_t EnorDi)
 
 }
 
-void GPIO_IRQPriorityConfig(uint8_t IRQNumber, uint8_t IRQPriority) {
+void GPIO_IRQPriorityConfig(uint8_t IRQNumber, uint32_t IRQPriority)
+{
+	uint8_t iprx = IRQNumber / 4;
+	uint8_t iprx_section = IRQNumber % 4;
+	//low bits are not implemented while only high bits are implemented
 
-	uint8_t irqx = IRQNumber / 4;
-	uint8_t irqx_section = IRQNumber % 4;
-	uint8_t amount_shifted = (irqx_section * 8) + (8 - NUM_NON_IMPLEMENTED);
+	uint8_t shift_amount = (8 * iprx_section) + (8 - NO_PR_BITS_IMPLEMENTED);
 
-
-
-
+	*(NVIC_PR_BASEADDR + (iprx * 4)) &= ~(0xFU << shift_amount);
+	*(NVIC_PR_BASEADDR + (iprx * 4)) |= (IRQPriority << shift_amount);
 }
 
-void GPIO_IRQHandling(uint8_t PinNumber);
+void GPIO_IRQHandling(uint8_t PinNumber)
+{
+
+	//clear the pending register by writing one so that the Nvic can start processing the EXRI_IRQ_handler implemented in main 
+	if (EXTI->PR & (1 << PinNumber))
+	{
+		EXTI->PR |= (1 << PinNumber);
+	}
+}
 
 
 #endif // !stm32F401Re_gpio_driver.c

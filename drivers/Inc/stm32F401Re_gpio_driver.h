@@ -1,5 +1,5 @@
-#ifndef STM32F401RE_GPIO_DRIVER_H
-#define STM32F401RE_GPIO_DRIVER_H
+#ifndef INC_STM32F401RE_GPIO_DRIVER_H
+#define INC_STM32F401RE_GPIO_DRIVER_H
 
 #include <stdint.h>
 #include "stm32F401Re.h"

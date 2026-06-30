@@ -8,6 +8,8 @@
 #ifndef INC_STM32F401RE_H_
 #define INC_STM32F401RE_H_
 
+#include<stdint.h>
+
  /*
   * ARM Cortex-M4 processor specific details
   * ----------------------------------------------------------------------------------------------------------------------------------------------
@@ -43,7 +45,7 @@
 //--------------------------------------------------------------------------------------------------------------------------------------------
 
 
-#include<stdint.h>
+
 #define vo volatile
 
 
@@ -243,6 +245,31 @@ typedef struct
 
 #define SYSCFG       ((SYSCFG_RegStruct_t *)SYSCFG_BASEADDR)
 
+
+
+/* SPI Register Structure definition
+ *
+ */
+
+typedef struct
+{
+    vo uint32_t CR1;        /* 0x00: SPI control register 1 */
+    vo uint32_t CR2;        /* 0x04: SPI control register 2 */
+    vo uint32_t SR;         /* 0x08: SPI status register */
+    vo uint32_t DR;         /* 0x0C: SPI data register */
+    vo uint32_t CRCPR;      /* 0x10: SPI CRC polynomial register */
+    vo uint32_t RXCRCR;     /* 0x14: SPI RX CRC register */
+    vo uint32_t TXCRCR;     /* 0x18: SPI TX CRC register */
+    vo uint32_t I2SCFGR;    /* 0x1C: SPI_I2S configuration register */
+    vo uint32_t I2SPR;      /* 0x20: SPI_I2S prescaler register */
+
+} SPI_RegStruct_t;
+
+
+#define SPI1        ((SPI_RegStruct_t *)SPI1_BASEADDR)
+#define SPI2        ((SPI_RegStruct_t *)SPI2_BASEADDR)
+#define SPI3        ((SPI_RegStruct_t *)SPI3_BASEADDR)
+#define SPI4        ((SPI_RegStruct_t *)SPI4_BASEADDR)
 
 
 
