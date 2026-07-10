@@ -9,6 +9,10 @@
 #define INC_STM32F401RE_H_
 
 #include<stdint.h>
+#include <stddef.h>
+#define vo volatile
+
+#define __weak   __attribute__((weak))
 
  /*
   * ARM Cortex-M4 processor specific details
@@ -37,7 +41,7 @@
 #define NVIC_ICER3        ((vo uint32_t*)0xE000E18C)
 
 
-#define NVIC_PR_BASEADDR    ((volatile uint32_t*)0xE000E400U)
+#define NVIC_PR_BASEADDR    ((vo uint32_t*)0xE000E400U)
 
 #define NO_PR_BITS_IMPLEMENTED    4
 
@@ -46,7 +50,7 @@
 
 
 
-#define vo volatile
+
 
 
 /*Base address of memories*/
@@ -274,16 +278,6 @@ typedef struct
 
 
 
-
-
-
-
-
-
-
-
-
-
 /* Clock enable macros for GPIO peripherals */
 
 #define GPIOA_CLOCK_EN()      (RCC->AHB1ENR |= (1U << 0))
@@ -375,6 +369,13 @@ typedef struct
 #define GPIOE_REG_RESET()    do { (RCC->AHB1RSTR |=  (1U << 4));  (RCC->AHB1RSTR &= ~(1U << 4));  } while (0)
 #define GPIOH_REG_RESET()    do { (RCC->AHB1RSTR |=  (1U << 7));  (RCC->AHB1RSTR &= ~(1U << 7));  } while (0)
 
+#define SPI1_REG_RESET()   do { (RCC->APB2RSTR |=  (1U << 12)); (RCC->APB2RSTR &= ~(1U << 12)); } while(0)
+#define SPI2_REG_RESET()   do { (RCC->APB1RSTR |=  (1U << 14)); (RCC->APB1RSTR &= ~(1U << 14)); } while(0)
+#define SPI3_REG_RESET()   do { (RCC->APB1RSTR |=  (1U << 15)); (RCC->APB1RSTR &= ~(1U << 15)); } while(0)
+#define SPI4_REG_RESET()   do { (RCC->APB2RSTR |=  (1U << 13)); (RCC->APB2RSTR &= ~(1U << 13)); } while(0)
+
+
+ 
 
 /*General Macros
  *
@@ -391,6 +392,9 @@ typedef struct
 
 #define GPIO_PIN_SET        SET
 #define GPIO_PIN_RESET      RESET
+
+#define FLAG_RESET     RESET
+#define FLAG_SET       SET
 
  /*
   * This macro returns the port code for a given GPIOx base address.
@@ -428,5 +432,13 @@ typedef struct
 #define IRQ_NO_EXTI4          10U
 #define IRQ_NO_EXTI9_5        23U
 #define IRQ_NO_EXTI15_10      40U
+/*
+ * SPI IRQ number definitions
+ */
+#define IRQ_NO_SPI1        35U    /* SPI1 global interrupt */
+#define IRQ_NO_SPI2        36U    /* SPI2 global interrupt */
+#define IRQ_NO_SPI3        51U    /* SPI3 global interrupt */
+#define IRQ_NO_SPI4        84U    /* SPI4 global interrupt */
+
 
 #endif /* INC_STM32F401RE_H_ */
