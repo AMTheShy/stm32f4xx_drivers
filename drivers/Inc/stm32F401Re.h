@@ -277,6 +277,29 @@ typedef struct
 
 
 
+/*I2C Register Structure definition*/
+
+typedef struct
+{
+    vo uint32_t CR1;       /* Offset 0x00 */
+    vo uint32_t CR2;       /* Offset 0x04 */
+    vo uint32_t OAR1;      /* Offset 0x08 */
+    vo uint32_t OAR2;      /* Offset 0x0C */
+    vo uint32_t DR;        /* Offset 0x10 */
+    vo uint32_t SR1;       /* Offset 0x14 */
+    vo uint32_t SR2;       /* Offset 0x18 */
+    vo uint32_t CCR;       /* Offset 0x1C */
+    vo uint32_t TRISE;     /* Offset 0x20 */
+    vo uint32_t FLTR;      /* Offset 0x24 */
+
+} I2C_RegStruct_t;
+
+#define I2C1    ((I2C_RegStruct_t *)I2C1_BASEADDR)
+#define I2C2    ((I2C_RegStruct_t *)I2C2_BASEADDR)
+#define I2C3    ((I2C_RegStruct_t *)I2C3_BASEADDR)
+
+
+
 
 /* Clock enable macros for GPIO peripherals */
 
@@ -373,6 +396,10 @@ typedef struct
 #define SPI2_REG_RESET()   do { (RCC->APB1RSTR |=  (1U << 14)); (RCC->APB1RSTR &= ~(1U << 14)); } while(0)
 #define SPI3_REG_RESET()   do { (RCC->APB1RSTR |=  (1U << 15)); (RCC->APB1RSTR &= ~(1U << 15)); } while(0)
 #define SPI4_REG_RESET()   do { (RCC->APB2RSTR |=  (1U << 13)); (RCC->APB2RSTR &= ~(1U << 13)); } while(0)
+
+#define I2C1_REG_RESET()    do { (RCC->APB1RSTR |=  (1U << 21)); (RCC->APB1RSTR &= ~(1U << 21)); } while (0)
+#define I2C2_REG_RESET()    do { (RCC->APB1RSTR |=  (1U << 22)); (RCC->APB1RSTR &= ~(1U << 22)); } while (0)
+#define I2C3_REG_RESET()    do { (RCC->APB1RSTR |=  (1U << 23)); (RCC->APB1RSTR &= ~(1U << 23)); } while (0)
 
 
  
