@@ -3,6 +3,99 @@
 
 #include "stm32F401Re_spi_driver.h"
 
+static void SPI_ClearOVRFlag(SPI_RegStruct_t* pSPIx);
+static void SPI_CloseTransmission(SPI_Handle_t* pSPIHandle);
+static void SPI_CloseReception(SPI_Handle_t* pSPIHandle);
+static void SPI_TXE_InterruptHandle(SPI_Handle_t* pSPIHandle);
+static void SPI_RXNE_InterruptHandle(SPI_Handle_t* pSPIHandle);
+static void SPI_OVR_ERR_InterruptHandle(SPI_Handle_t* pSPIHandle);
+/*----------------------------------------------------------PRIVATE HELPER FUNCTIONS-----------------------------------------------------------*/
+
+static void SPI_ClearOVRFlag(SPI_RegStruct_t* pSPIx)
+{
+	uint8_t temp;
+
+	temp = pSPIx->DR;
+	temp = pSPIx->SR;
+	(void)temp;
+}
+
+static void SPI_CloseTransmission(SPI_Handle_t* pSPIHandle)
+{
+	pSPIHandle->pSPIx->CR2 &= ~(1U << SPI_CR2_TXEIE);
+	pSPIHandle->pTxBuffer = NULL;
+	pSPIHandle->TxLen = 0U;
+	pSPIHandle->TxState = SPI_READY;
+}
+
+static void SPI_CloseReception(SPI_Handle_t* pSPIHandle)
+{
+	pSPIHandle->pSPIx->CR2 &= ~(1U << SPI_CR2_RXNEIE);
+	pSPIHandle->pRxBuffer = NULL;
+	pSPIHandle->RxLen = 0U;
+	pSPIHandle->RxState = SPI_READY;
+}
+
+static void SPI_TXE_InterruptHandle(SPI_Handle_t* pSPIHandle)
+{
+	if (pSPIHandle->pSPIx->CR1 & (1U << SPI_CR1_DFF))
+	{
+		pSPIHandle->pSPIx->DR = *((uint16_t*)pSPIHandle->pTxBuffer);
+		pSPIHandle->TxLen -= 2U;
+		pSPIHandle->pTxBuffer += 2U;
+	}
+	else
+	{
+		pSPIHandle->pSPIx->DR = *pSPIHandle->pTxBuffer;
+		pSPIHandle->TxLen--;
+		pSPIHandle->pTxBuffer++;
+	}
+
+	if (!pSPIHandle->TxLen)
+	{
+		SPI_CloseTransmission(pSPIHandle);
+		SPI_ApplicationEventCallback(pSPIHandle, SPI_EVENT_TX_CMPLT);
+	}
+}
+
+static void SPI_RXNE_InterruptHandle(SPI_Handle_t* pSPIHandle)
+{
+	if (pSPIHandle->pSPIx->CR1 & (1U << SPI_CR1_DFF))
+	{
+		*((uint16_t*)pSPIHandle->pRxBuffer) = pSPIHandle->pSPIx->DR;
+		pSPIHandle->RxLen -= 2U;
+		pSPIHandle->pRxBuffer += 2U;
+	}
+	else
+	{
+		*pSPIHandle->pRxBuffer = pSPIHandle->pSPIx->DR;
+		pSPIHandle->RxLen--;
+		pSPIHandle->pRxBuffer++;
+	}
+
+	if (!pSPIHandle->RxLen)
+	{
+		SPI_CloseReception(pSPIHandle);
+		SPI_ApplicationEventCallback(pSPIHandle, SPI_EVENT_RX_CMPLT);
+	}
+}
+
+static void SPI_OVR_ERR_InterruptHandle(SPI_Handle_t* pSPIHandle)
+{
+	/*
+	 * If SPI is busy in transmission, OVR flag is not cleared here.
+	 * Application is notified through the callback.
+	 */
+	if (pSPIHandle->TxState != SPI_BUSY_IN_TX)
+	{
+		SPI_ClearOVRFlag(pSPIHandle->pSPIx);
+	}
+
+	SPI_ApplicationEventCallback(pSPIHandle, SPI_EVENT_OVR_ERR);
+}
+
+/*--------------------------------------------------------------------------------------------------------------------------------------------*/
+
 /*
  * Peripheral Clock setup
  */
@@ -400,12 +493,6 @@ uint8_t SPI_ReceiveData_IT(SPI_Handle_t* pSPIHandle,
 /*
  * IRQ Configuration and ISR handling
  */
-
-/* Private helper functions */
-static void SPI_TXE_InterruptHandle(SPI_Handle_t* pSPIHandle);
-static void SPI_RXNE_InterruptHandle(SPI_Handle_t* pSPIHandle);
-static void SPI_OVR_ERR_InterruptHandle(SPI_Handle_t* pSPIHandle);
-
 void SPI_IRQInterruptConfig(uint8_t IRQNumber, uint8_t EnorDi)
 {
 	if (EnorDi == ENABLE)
@@ -545,102 +632,11 @@ void SPI_SSOEConfig(SPI_RegStruct_t* pSPIx, uint8_t EnOrDi)
 	}
 }
 
-void SPI_ClearOVRFlag(SPI_RegStruct_t* pSPIx)
-{
-	uint8_t temp;
-
-	temp = pSPIx->DR;
-	temp = pSPIx->SR;
-	(void)temp;
-}
-
-void SPI_CloseTransmission(SPI_Handle_t* pSPIHandle)
-{
-	pSPIHandle->pSPIx->CR2 &= ~(1U << SPI_CR2_TXEIE);
-	pSPIHandle->pTxBuffer = NULL;
-	pSPIHandle->TxLen = 0U;
-	pSPIHandle->TxState = SPI_READY;
-}
-
-void SPI_CloseReception(SPI_Handle_t* pSPIHandle)
-{
-	pSPIHandle->pSPIx->CR2 &= ~(1U << SPI_CR2_RXNEIE);
-	pSPIHandle->pRxBuffer = NULL;
-	pSPIHandle->RxLen = 0U;
-	pSPIHandle->RxState = SPI_READY;
-}
-
-
-/*
- * Private helper function implementations
- */
-static void SPI_TXE_InterruptHandle(SPI_Handle_t* pSPIHandle)
-{
-	if (pSPIHandle->pSPIx->CR1 & (1U << SPI_CR1_DFF))
-	{
-		pSPIHandle->pSPIx->DR = *((uint16_t*)pSPIHandle->pTxBuffer);
-		pSPIHandle->TxLen -= 2U;
-		pSPIHandle->pTxBuffer += 2U;
-	}
-	else
-	{
-		pSPIHandle->pSPIx->DR = *pSPIHandle->pTxBuffer;
-		pSPIHandle->TxLen--;
-		pSPIHandle->pTxBuffer++;
-	}
-
-	if (!pSPIHandle->TxLen)
-	{
-		SPI_CloseTransmission(pSPIHandle);
-		SPI_ApplicationEventCallback(pSPIHandle, SPI_EVENT_TX_CMPLT);
-	}
-}
-
-static void SPI_RXNE_InterruptHandle(SPI_Handle_t* pSPIHandle)
-{
-	if (pSPIHandle->pSPIx->CR1 & (1U << SPI_CR1_DFF))
-	{
-		*((uint16_t*)pSPIHandle->pRxBuffer) = pSPIHandle->pSPIx->DR;
-		pSPIHandle->RxLen -= 2U;
-		pSPIHandle->pRxBuffer += 2U;
-	}
-	else
-	{
-		*pSPIHandle->pRxBuffer = pSPIHandle->pSPIx->DR;
-		pSPIHandle->RxLen--;
-		pSPIHandle->pRxBuffer++;
-	}
-
-	if (!pSPIHandle->RxLen)
-	{
-		SPI_CloseReception(pSPIHandle);
-		SPI_ApplicationEventCallback(pSPIHandle, SPI_EVENT_RX_CMPLT);
-	}
-}
-
-static void SPI_OVR_ERR_InterruptHandle(SPI_Handle_t* pSPIHandle)
-{
-	uint8_t temp;
-
-	/*
-	 * If SPI is busy in transmission, application must clear
-	 * the OVR flag on its own using SPI_ClearOVRFlag().
-	 */
-	if (pSPIHandle->TxState != SPI_BUSY_IN_TX)
-	{
-		temp = pSPIHandle->pSPIx->DR;
-		temp = pSPIHandle->pSPIx->SR;
-		(void)temp;
-	}
-
-	SPI_ApplicationEventCallback(pSPIHandle, SPI_EVENT_OVR_ERR);
-}
-
 
 /*
  * Application callback
  */
-__weak void SPI_ApplicationEventCallback(SPI_Handle_t* pSPIHandle, uint8_t AppEv)
+weak void SPI_ApplicationEventCallback(SPI_Handle_t* pSPIHandle, uint8_t AppEv)
 {
 	(void)pSPIHandle;
 	(void)AppEv;

@@ -12,7 +12,7 @@
 #include <stddef.h>
 #define vo volatile
 
-#define __weak   __attribute__((weak))
+#define weak   __attribute__((weak))
 
  /*
   * ARM Cortex-M4 processor specific details
