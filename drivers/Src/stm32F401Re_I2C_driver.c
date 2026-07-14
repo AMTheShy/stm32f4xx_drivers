@@ -34,11 +34,19 @@ static void I2C_GenerateStartCondition(I2C_RegStruct_t* pI2Cx)
 	pI2Cx->CR1 |= (1U << I2C_CR1_START);
 }
 
-static void I2C_ExecuteAddressPhase(I2C_RegStruct_t* pI2Cx, uint8_t SlaveAddr)
+static void I2C_ExecuteAddressPhase(I2C_RegStruct_t* pI2Cx, uint8_t SlaveAddr,uint8_t ROW)
 {
 	SlaveAddr = SlaveAddr << 1;
-	SlaveAddr &= ~(1U); /* Slave address + r/w bit = 0 (write) */
-	pI2Cx->DR = SlaveAddr;
+
+	if (ROW == I2C_READ) {
+		SlaveAddr |= (1U); /* Slave address + r/w bit = 1 (read) */
+		pI2Cx->DR = SlaveAddr;
+	}
+	else {
+		SlaveAddr &= ~(1U); /* Slave address + r/w bit = 0 (write) */
+		pI2Cx->DR = SlaveAddr;
+	}
+	
 }
 
 static void I2C_ClearADDRFlag(I2C_RegStruct_t* pI2Cx)
@@ -198,7 +206,7 @@ void I2C_Init(I2C_Handle_t* pI2CHandle)
 	tempreg = 0U;
 
 	tempreg |=
-		((uint32_t)pI2CHandle->I2C_Config.I2C_AckControl << 10U);
+		((uint32_t)pI2CHandle->I2C_Config.I2C_ACKControl << 10U);
 
 	pI2CHandle->pI2Cx->CR1 = tempreg;
 
@@ -340,13 +348,25 @@ void I2C_Init(I2C_Handle_t* pI2CHandle)
 }
 
 
+static void I2C_ManageAcking(I2C_RegStruct_t* pI2Cx, uint8_t EnOrDi)
+{
+	if (EnOrDi == I2C_ACK_ENABLE)
+	{
+		/* Enable ACK generation */
+		pI2Cx->CR1 |= (1U << I2C_CR1_ACK);
+	}
+	else
+	{
+		/* Disable ACK generation */
+		pI2Cx->CR1 &= ~(1U << I2C_CR1_ACK);
+	}
+}
+
+
 /*
  * Data Send and Receive
  */
-void I2C_MasterSendData(I2C_Handle_t* pI2CHandle,
-	uint8_t* pTxBuffer,
-	uint32_t Len,
-	uint8_t SlaveAddr)
+void I2C_MasterSendData(I2C_Handle_t* pI2CHandle,uint8_t* pTxBuffer,uint32_t Len,uint8_t SlaveAddr)
 {
 	/*
 	 * 1. Generate the START condition
@@ -422,5 +442,326 @@ void I2C_MasterSendData(I2C_Handle_t* pI2CHandle,
 	I2C_GenerateStopCondition(pI2CHandle->pI2Cx);
 }
 
+
+
+
+
+void I2C_MasterReceiveData(I2C_Handle_t* pI2CHandle,uint8_t* pRxBuffer,uint8_t Len,uint8_t SlaveAddr)
+{
+	/* 1. Generate the START condition */
+	I2C_GenerateStartCondition(pI2CHandle->pI2Cx);
+
+	/*
+	 * 2. Wait until START generation is completed.
+	 *
+	 * SB becomes 1 after the START condition has been generated.
+	 * Until SB is cleared, the I2C peripheral may stretch SCL LOW.
+	 */
+	while (!I2C_GetFlagStatus(pI2CHandle->pI2Cx, I2C_FLAG_SB))
+	{
+		/* Wait */
+	}
+
+	/*
+	 * 3. Send slave address with R/W bit = 1.
+	 *
+	 * Your shared address-phase helper is used here with I2C_READ.
+	 */
+	I2C_ExecuteAddressPhase(pI2CHandle->pI2Cx,
+		SlaveAddr,
+		I2C_READ);
+
+	/*
+	 * 4. Wait until address phase is completed.
+	 *
+	 * ADDR becomes 1 after the slave acknowledges its address.
+	 */
+	while (!I2C_GetFlagStatus(pI2CHandle->pI2Cx, I2C_FLAG_ADDR))
+	{
+		/* Wait */
+	}
+
+	/* Procedure to read only one byte from slave */
+	if (Len == 1U)
+	{
+		/*
+		 * Disable ACK before clearing ADDR.
+		 *
+		 * This causes the master to NACK the one and only byte,
+		 * telling the slave that no more bytes are required.
+		 */
+		I2C_ManageAcking(pI2CHandle->pI2Cx, I2C_ACK_DISABLE);
+
+		/*
+		 * Generate STOP before clearing ADDR, following the
+		 * single-byte receive sequence shown in the lecture.
+		 */
+		I2C_GenerateStopCondition(pI2CHandle->pI2Cx);
+
+		/* Clear ADDR by reading SR1 followed by SR2 */
+		I2C_ClearADDRFlag(pI2CHandle->pI2Cx);
+
+		/* Wait until receive data register is not empty */
+		while (!I2C_GetFlagStatus(pI2CHandle->pI2Cx, I2C_FLAG_RXNE))
+		{
+			/* Wait */
+		}
+
+		/* Read the received byte */
+		*pRxBuffer = (uint8_t)pI2CHandle->pI2Cx->DR;
+
+		/*
+		 * Restore ACK configuration before leaving the API.
+		 * This prepares the peripheral for the next receive operation.
+		 */
+		if (pI2CHandle->I2C_Config.I2C_ACKControl ==
+			I2C_ACK_ENABLE)
+		{
+			I2C_ManageAcking(pI2CHandle->pI2Cx,
+				I2C_ACK_ENABLE);
+		}
+
+		return;
+	}
+
+	/* Procedure to read more than one byte from slave */
+	if (Len > 1U)
+	{
+		/*
+		 * ACK must normally be enabled so that the master acknowledges
+		 * all received bytes except the final byte.
+		 */
+		I2C_ManageAcking(pI2CHandle->pI2Cx, I2C_ACK_ENABLE);
+
+		/* Clear ADDR and begin the data phase */
+		I2C_ClearADDRFlag(pI2CHandle->pI2Cx);
+
+		/* Read until all requested bytes have been received */
+		for (uint32_t i = Len; i > 0U; i--)
+		{
+			/* Wait until a received byte is available */
+			while (!I2C_GetFlagStatus(pI2CHandle->pI2Cx,
+				I2C_FLAG_RXNE))
+			{
+				/* Wait */
+			}
+
+			/*
+			 * When only two bytes remain, disable ACK before reading
+			 * the second-last byte.
+			 *
+			 * After the second-last byte is read, the final byte will
+			 * be received with NACK, ending the receive operation.
+			 */
+			if (i == 2U)
+			{
+				I2C_ManageAcking(pI2CHandle->pI2Cx,
+					I2C_ACK_DISABLE);
+
+				/* Generate STOP for the end of the transaction */
+				I2C_GenerateStopCondition(pI2CHandle->pI2Cx);
+			}
+
+			/* Read the received byte into the application buffer */
+			*pRxBuffer = (uint8_t)pI2CHandle->pI2Cx->DR;
+
+			/* Move to the next buffer location */
+			pRxBuffer++;
+		}
+	}
+
+	/*
+	 * Re-enable ACK if ACK was enabled in the original I2C
+	 * configuration.
+	 */
+	if (pI2CHandle->I2C_Config.I2C_ACKControl ==
+		I2C_ACK_ENABLE)
+	{
+		I2C_ManageAcking(pI2CHandle->pI2Cx,
+			I2C_ACK_ENABLE);
+	}
+}
+
+uint8_t I2C_MasterSendData_IT(I2C_Handle_t* pI2CHandle,
+	uint8_t* pTxBuffer,
+	uint32_t Len,
+	uint8_t SlaveAddr,
+	uint8_t Sr)
+{
+	uint8_t busystate = pI2CHandle->TxRxState;
+
+	if ((busystate != I2C_BUSY_IN_TX) &&
+		(busystate != I2C_BUSY_IN_RX))
+	{
+		/*
+		 * Store transfer information in the handle.
+		 * The interrupt handlers will use these values later.
+		 */
+		pI2CHandle->pTxBuffer = pTxBuffer;
+		pI2CHandle->TxLen = Len;
+		pI2CHandle->TxRxState = I2C_BUSY_IN_TX;
+		pI2CHandle->DevAddr = SlaveAddr;
+		pI2CHandle->Sr = Sr;
+
+		/*
+		 * Generate START condition.
+		 *
+		 * When START is generated successfully, SB becomes 1.
+		 * The event ISR will then send the slave address.
+		 */
+		pI2CHandle->pI2Cx->CR1 |=
+			(1U << I2C_CR1_START);
+
+		/*
+		 * Enable TxE and RxNE buffer interrupts.
+		 */
+		pI2CHandle->pI2Cx->CR2 |=
+			(1U << I2C_CR2_ITBUFEN);
+
+		/*
+		 * Enable event interrupts:
+		 * SB, ADDR, BTF, STOPF, etc.
+		 */
+		pI2CHandle->pI2Cx->CR2 |=
+			(1U << I2C_CR2_ITEVTEN);
+
+		/*
+		 * Enable error interrupts:
+		 * BERR, ARLO, AF, OVR, TIMEOUT, etc.
+		 */
+		pI2CHandle->pI2Cx->CR2 |=
+			(1U << I2C_CR2_ITERREN);
+	}
+
+	return busystate;
+}
+
+uint8_t I2C_MasterReceiveData_IT(I2C_Handle_t* pI2CHandle,
+	uint8_t* pRxBuffer,
+	uint32_t Len,
+	uint8_t SlaveAddr,
+	uint8_t Sr)
+{
+	uint8_t busystate = pI2CHandle->TxRxState;
+
+	if ((busystate != I2C_BUSY_IN_TX) &&
+		(busystate != I2C_BUSY_IN_RX))
+	{
+		/*
+		 * Store transfer information in the handle.
+		 * The interrupt handlers will use these values later.
+		 */
+		pI2CHandle->pRxBuffer = pRxBuffer;
+		pI2CHandle->RxLen = Len;
+		pI2CHandle->TxRxState = I2C_BUSY_IN_RX;
+
+		/*
+		 * RxLen will decrease during reception.
+		 * RxSize preserves the original requested length.
+		 */
+		pI2CHandle->RxSize = Len;
+
+		pI2CHandle->DevAddr = SlaveAddr;
+		pI2CHandle->Sr = Sr;
+
+		/*
+		 * Generate START condition.
+		 *
+		 * The event ISR will later send:
+		 * slave address + read bit.
+		 */
+		pI2CHandle->pI2Cx->CR1 |=
+			(1U << I2C_CR1_START);
+
+		/*
+		 * Enable TxE and RxNE buffer interrupts.
+		 */
+		pI2CHandle->pI2Cx->CR2 |=
+			(1U << I2C_CR2_ITBUFEN);
+
+		/*
+		 * Enable event interrupts:
+		 * SB, ADDR, BTF, STOPF, etc.
+		 */
+		pI2CHandle->pI2Cx->CR2 |=
+			(1U << I2C_CR2_ITEVTEN);
+
+		/*
+		 * Enable error interrupts:
+		 * BERR, ARLO, AF, OVR, TIMEOUT, etc.
+		 */
+		pI2CHandle->pI2Cx->CR2 |=
+			(1U << I2C_CR2_ITERREN);
+	}
+
+	return busystate;
+}
+
+
+
+/*
+ * IRQ Configuration and ISR handling
+ */
+void I2C_IRQInterruptConfig(uint8_t IRQNumber, uint8_t EnorDi)
+{
+	if (EnorDi == ENABLE)
+	{
+		/*
+		 * Configure ISER register
+		 */
+
+		if (IRQNumber <= 31U)
+		{
+			/* Program ISER0 register */
+			*NVIC_ISER0 |= (1U << IRQNumber);
+		}
+		else if (IRQNumber > 31U && IRQNumber < 64U)
+		{
+			/* Program ISER1 register */
+			*NVIC_ISER1 |= (1U << (IRQNumber % 32U));
+		}
+		else if (IRQNumber >= 64U && IRQNumber < 96U)
+		{
+			/* Program ISER2 register */
+			*NVIC_ISER2 |= (1U << (IRQNumber % 64U));
+		}
+	}
+	else
+	{
+		/*
+		 * Configure ICER register
+		 */
+
+		if (IRQNumber <= 31U)
+		{
+			/* Program ICER0 register */
+			*NVIC_ICER0 |= (1U << IRQNumber);
+		}
+		else if (IRQNumber > 31U && IRQNumber < 64U)
+		{
+			/* Program ICER1 register */
+			*NVIC_ICER1 |= (1U << (IRQNumber % 32U));
+		}
+		else if (IRQNumber >= 64U && IRQNumber < 96U)
+		{
+			/* Program ICER2 register */
+			*NVIC_ICER2 |= (1U << (IRQNumber % 64U));
+		}
+	}
+
+}
+
+void I2C_IRQPriorityConfig(uint8_t IRQNumber, uint8_t IRQPriority)
+{
+	uint8_t iprx = IRQNumber / 4;
+	uint8_t iprx_section = IRQNumber % 4;
+	//low bits are not implemented while only high bits are implemented
+
+	uint8_t shift_amount = (8 * iprx_section) + (8 - NO_PR_BITS_IMPLEMENTED);
+
+	*(NVIC_PR_BASEADDR + (iprx * 4)) &= ~(0xFU << shift_amount);
+	*(NVIC_PR_BASEADDR + (iprx * 4)) |= (IRQPriority << shift_amount);
+
+}
 
 #endif 

@@ -54,10 +54,20 @@ typedef struct
 /*
  * Handle structure for I2Cx peripheral
  */
+ 
 typedef struct
 {
-    I2C_RegStruct_t* pI2Cx;
-    I2C_Config_t  I2C_Config;
+	I2C_RegStruct_t* pI2Cx;
+	I2C_Config_t     I2C_Config;
+
+	uint8_t*		 pTxBuffer;   /* Store application Tx buffer address */
+	uint8_t*		 pRxBuffer;   /* Store application Rx buffer address */
+	uint32_t         TxLen;       /* Store remaining Tx length */
+	uint32_t         RxLen;       /* Store remaining Rx length */
+	uint8_t          TxRxState;   /* Store current communication state */
+	uint8_t          DevAddr;     /* Store slave/device address */
+	uint32_t         RxSize;      /* Store original Rx size */
+	uint8_t          Sr;          /* Store repeated-start value */
 
 } I2C_Handle_t;
 
@@ -77,10 +87,16 @@ void I2C_DeInit(I2C_RegStruct_t* pI2Cx);
 /*
  * Data Send and Receive
  */
-void I2C_MasterSendData(I2C_Handle_t* pI2CHandle,
-	uint8_t* pTxBuffer,
-	uint32_t Len,
-	uint8_t SlaveAddr);
+
+static void I2C_ManageAcking(I2C_RegStruct_t* pI2Cx, uint8_t EnOrDi);
+
+void I2C_MasterSendData(I2C_Handle_t* pI2CHandle,uint8_t* pTxBuffer,uint32_t Len,uint8_t SlaveAddr);
+
+void I2C_MasterReceiveData(I2C_Handle_t* pI2CHandle, uint8_t* pRxBuffer, uint8_t Len, uint8_t SlaveAddr);
+
+void I2C_MasterSendData_IT(I2C_Handle_t* pI2CHandle, uint8_t* pTxBuffer, uint32_t Len, uint8_t SlaveAddr, uint8_t Sr);
+
+void I2C_MasterReceiveData_IT(I2C_Handle_t* pI2CHandle, uint8_t* pRxBuffer, uint8_t Len, uint8_t SlaveAddr, uint8_t Sr);
 
 
 /*
@@ -120,6 +136,21 @@ void I2C_ApplicationEventCallback(I2C_Handle_t* pI2CHandle, uint8_t AppEv);
    */
 #define I2C_FM_DUTY_2           0U
 #define I2C_FM_DUTY_16_9        1U
+
+
+/* I2C Read Or Write Data options
+
+*/
+
+#define I2C_READ				1U;
+#define I2C_WRITE				0U;
+
+/*
+ * I2C application states
+ */
+#define I2C_READY               0U
+#define I2C_BUSY_IN_RX          1U
+#define I2C_BUSY_IN_TX          2U
 
 
 
@@ -202,5 +233,23 @@ void I2C_ApplicationEventCallback(I2C_Handle_t* pI2CHandle, uint8_t AppEv);
 #define I2C_FLAG_BTF        (1U << I2C_SR1_BTF)
 #define I2C_FLAG_ADDR       (1U << I2C_SR1_ADDR)
 #define I2C_FLAG_TIMEOUT    (1U << I2C_SR1_TIMEOUT)
+
+
+	/*
+	 * IRQ numbers of STM32F401xx MCU
+	 */
+
+	 /* I2C1 interrupts */
+#define IRQ_NO_I2C1_EV          31U
+#define IRQ_NO_I2C1_ER          32U
+
+/* I2C2 interrupts */
+#define IRQ_NO_I2C2_EV          33U
+#define IRQ_NO_I2C2_ER          34U
+
+/* I2C3 interrupts */
+#define IRQ_NO_I2C3_EV          72U
+#define IRQ_NO_I2C3_ER          73U
+
 
 #endif 

@@ -423,6 +423,7 @@ typedef struct
 #define FLAG_RESET     RESET
 #define FLAG_SET       SET
 
+
  /*
   * This macro returns the port code for a given GPIOx base address.
   * The returned value is written into SYSCFG_EXTICR register fields.
