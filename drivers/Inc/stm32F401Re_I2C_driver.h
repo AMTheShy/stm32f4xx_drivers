@@ -87,23 +87,26 @@ void I2C_DeInit(I2C_RegStruct_t* pI2Cx);
 /*
  * Data Send and Receive
  */
-
-static void I2C_ManageAcking(I2C_RegStruct_t* pI2Cx, uint8_t EnOrDi);
-
 void I2C_MasterSendData(I2C_Handle_t* pI2CHandle,uint8_t* pTxBuffer,uint32_t Len,uint8_t SlaveAddr);
 
 void I2C_MasterReceiveData(I2C_Handle_t* pI2CHandle, uint8_t* pRxBuffer, uint8_t Len, uint8_t SlaveAddr);
 
-void I2C_MasterSendData_IT(I2C_Handle_t* pI2CHandle, uint8_t* pTxBuffer, uint32_t Len, uint8_t SlaveAddr, uint8_t Sr);
+uint8_t I2C_MasterSendData_IT(I2C_Handle_t* pI2CHandle, uint8_t* pTxBuffer, uint32_t Len, uint8_t SlaveAddr, uint8_t Sr);
 
-void I2C_MasterReceiveData_IT(I2C_Handle_t* pI2CHandle, uint8_t* pRxBuffer, uint8_t Len, uint8_t SlaveAddr, uint8_t Sr);
+uint8_t I2C_MasterReceiveData_IT(I2C_Handle_t* pI2CHandle, uint8_t* pRxBuffer, uint32_t Len, uint8_t SlaveAddr, uint8_t Sr);
+
+void I2C_SlaveSendData(I2C_RegStruct_t* pI2Cx, uint8_t Data);
+
+uint8_t I2C_SlaveReceiveData(I2C_RegStruct_t* pI2Cx);
 
 
 /*
- * IRQ Configuration
+ * IRQ Configuration and ISR handling
  */
 void I2C_IRQInterruptConfig(uint8_t IRQNumber, uint8_t EnorDi);
 void I2C_IRQPriorityConfig(uint8_t IRQNumber, uint8_t IRQPriority);
+void I2C_EV_IRQHandling(I2C_Handle_t* pI2CHandle);
+void I2C_ER_IRQHandling(I2C_Handle_t* pI2CHandle);
 
 
 /*
@@ -116,7 +119,7 @@ void I2C_PeripheralControl(I2C_RegStruct_t* pI2Cx, uint8_t EnorDi);
 /*
  * Application callback
  */
-void I2C_ApplicationEventCallback(I2C_Handle_t* pI2CHandle, uint8_t AppEv);
+weak void I2C_ApplicationEventCallback(I2C_Handle_t* pI2CHandle, uint8_t AppEv);
 
 /*
  * I2C SCL speed configuration options
@@ -142,8 +145,14 @@ void I2C_ApplicationEventCallback(I2C_Handle_t* pI2CHandle, uint8_t AppEv);
 
 */
 
-#define I2C_READ				1U;
-#define I2C_WRITE				0U;
+#define I2C_READ                1U
+#define I2C_WRITE               0U
+
+/*
+ * I2C repeated-start control options
+ */
+#define I2C_DISABLE_SR          0U
+#define I2C_ENABLE_SR           1U
 
 /*
  * I2C application states
@@ -151,6 +160,24 @@ void I2C_ApplicationEventCallback(I2C_Handle_t* pI2CHandle, uint8_t AppEv);
 #define I2C_READY               0U
 #define I2C_BUSY_IN_RX          1U
 #define I2C_BUSY_IN_TX          2U
+
+/*
+ * I2C application events
+ */
+#define I2C_EV_TX_CMPLT         1U
+#define I2C_EV_RX_CMPLT         2U
+#define I2C_EV_STOP             8U
+#define I2C_EV_DATA_RCV         9U
+#define I2C_EV_DATA_REQ         10U
+
+/*
+ * I2C application error events
+ */
+#define I2C_ERROR_BERR          3U
+#define I2C_ERROR_ARLO          4U
+#define I2C_ERROR_AF            5U
+#define I2C_ERROR_OVR           6U
+#define I2C_ERROR_TIMEOUT       7U
 
 
 
