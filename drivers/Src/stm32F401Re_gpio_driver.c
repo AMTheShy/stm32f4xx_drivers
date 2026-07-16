@@ -126,7 +126,7 @@ void GPIO_Init(GPIO_Pin_Handle_t* pGPIOHandle) {
 		temp = pGPIOHandle->GPIO_pin_config.GPIO_PinoutputType
 			<< pGPIOHandle->GPIO_pin_config.GPIO_PinNumber;
 
-		pGPIOHandle->pGPIOx->OTYPER &= ~(0x1 << (2 * pGPIOHandle->GPIO_pin_config.GPIO_PinNumber));
+		pGPIOHandle->pGPIOx->OTYPER &= ~(0x1U << pGPIOHandle->GPIO_pin_config.GPIO_PinNumber);
 
 		pGPIOHandle->pGPIOx->OTYPER |= temp;
 
@@ -242,12 +242,12 @@ void GPIO_WriteToOutputPin(GPIO_RegStruct_t* pGPIOx, uint8_t PinNumber, uint8_t 
 
 	if (Value == GPIO_PIN_SET) {
 	
-		pGPIOx->ODR |= (Value << PinNumber);
+		pGPIOx->ODR |= (1U << PinNumber);
 
 	}
 	else {
 	
-		pGPIOx->ODR &= ~(Value << PinNumber);
+		pGPIOx->ODR &= ~(1U << PinNumber);
 
 	}
 

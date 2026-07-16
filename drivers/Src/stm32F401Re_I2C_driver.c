@@ -3,8 +3,6 @@
 #include "stm32F401Re_I2C_driver.h"
 
 static uint8_t I2C_GetFlagStatus(I2C_RegStruct_t* pI2Cx, uint32_t FlagName);
-static uint32_t RCC_GetPLLClockFreq(void);
-static uint32_t RCC_GetPCLK1FreqValue(void);
 static void I2C_GenerateStartCondition(I2C_RegStruct_t* pI2Cx);
 static void I2C_ExecuteAddressPhase(I2C_RegStruct_t* pI2Cx, uint8_t SlaveAddr, uint8_t ROW);
 static void I2C_ManageAcking(I2C_RegStruct_t* pI2Cx, uint8_t EnOrDi);
@@ -229,69 +227,6 @@ static void I2C_CloseReceiveData(I2C_Handle_t* pI2CHandle)
 	}
 }
 
-
-static uint32_t RCC_GetPLLClockFreq(void) {
-	
-	return 0u;
-
-}
-
-
-static uint32_t RCC_GetPCLK1FreqValue(void) {
-
-	uint8_t clkBinary;
-	uint32_t PCLK1, clkSourceFreq, temp, ahbp, apb1p;
-
-	clkBinary = ((RCC->CFGR >> 2) & 0x3);
-
-	if (clkBinary == HSI) {
-
-		clkSourceFreq = HSI_CLOCK_FREQ;
-
-	}
-	else if (clkBinary == HSE) {
-
-		clkSourceFreq = HSE_CLOCK_FREQ;
-
-	}
-	else if (clkBinary == PLL) {
-	
-		clkSourceFreq = RCC_GetPLLClockFreq();
-
-	}
-
-	temp = ((RCC->CFGR >> 4) & 0xF);
-
-		if (temp < 8) {
-		
-			ahbp = 1u;
-
-		}
-		else {
-		
-			ahbp = AHB_Prescaler[temp - 8];
-		
-		}
-	 
-		temp = ((RCC->CFGR >> 10) & 0x7);
-
-		if (temp < 4) {
-
-			apb1p = 1u;
-
-		}
-		else {
-
-			apb1p = APB_Prescaler[temp - 4];
-
-		}
-
-		PCLK1 = (clkSourceFreq / ahbp) / apb1p;
-
-
-		return PCLK1;
-
-}
 
 /*--------------------------------------------------------------------------------------------------------------------------------------------*/
 

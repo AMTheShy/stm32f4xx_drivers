@@ -114,10 +114,6 @@ void SPI_PeriClockControl(SPI_RegStruct_t* pSPIx, uint8_t EnorDi){
 		{
 			SPI3_CLOCK_EN();
 		}
-		else if (pSPIx == SPI4)
-		{
-			SPI4_CLOCK_EN();
-		}
 	}
 	else
 	{
@@ -132,10 +128,6 @@ void SPI_PeriClockControl(SPI_RegStruct_t* pSPIx, uint8_t EnorDi){
 		else if (pSPIx == SPI3)
 		{
 			SPI3_CLOCK_DI();
-		}
-		else if (pSPIx == SPI4)
-		{
-			SPI4_CLOCK_DI();
 		}
 	}
 }
@@ -295,10 +287,6 @@ void SPI_DeInit(SPI_RegStruct_t* pSPIx) {
 	else if (pSPIx == SPI3)
 	{
 		SPI3_REG_RESET();
-	}
-	else if (pSPIx == SPI4)
-	{
-		SPI4_REG_RESET();
 	}
 
 }

@@ -2,41 +2,7 @@
 #define Inc_stm32F401Re_I2C_driver.h
 
 #include "stm32F401Re.h"
-
-static const uint32_t AHB_Prescaler[8] =
-{
-	2U,
-	4U,
-	8U,
-	16U,
-	64U,
-	128U,
-	256U,
-	512U
-};
-
-static const uint32_t APB_Prescaler[4] =
-{
-	2U,
-	4U,
-	8U,
-	16U
-};
-
-/*
- * Clock source values
- *
- * HSI is fixed at 16 MHz on STM32F401RE.
- *
- * HSE_CLOCK depends on the actual external clock source used
- * by your board. For the course setup, 8 MHz is assumed.
- */
-#define HSI_CLOCK_FREQ      16000000U
-#define HSE_CLOCK_FREQ       8000000U
-
-#define HSI                 0
-#define HSE                 1
-#define PLL                 2
+#include "stm32F401Re_rcc_driver.h"
 
 /*
  * Configuration structure for I2Cx peripheral

@@ -101,8 +101,6 @@
 
 #define SPI3_BASEADDR              (APB1_PERIPH_BASEADDR + 0x3C00U)
 
-#define SPI4_BASEADDR              (APB2_PERIPH_BASEADDR + 0x3400U)
-
 
 /* Base addresses of USART peripherals */
 
@@ -273,7 +271,6 @@ typedef struct
 #define SPI1        ((SPI_RegStruct_t *)SPI1_BASEADDR)
 #define SPI2        ((SPI_RegStruct_t *)SPI2_BASEADDR)
 #define SPI3        ((SPI_RegStruct_t *)SPI3_BASEADDR)
-#define SPI4        ((SPI_RegStruct_t *)SPI4_BASEADDR)
 
 
 
@@ -299,6 +296,28 @@ typedef struct
 #define I2C3    ((I2C_RegStruct_t *)I2C3_BASEADDR)
 
 
+/* USART Register Structure definition
+ *
+ * Register map for STM32F401xB/C/D/E (RM0368).
+ */
+
+typedef struct
+{
+    vo uint32_t SR;         /* 0x00: USART status register */
+    vo uint32_t DR;         /* 0x04: USART data register */
+    vo uint32_t BRR;        /* 0x08: USART baud rate register */
+    vo uint32_t CR1;        /* 0x0C: USART control register 1 */
+    vo uint32_t CR2;        /* 0x10: USART control register 2 */
+    vo uint32_t CR3;        /* 0x14: USART control register 3 */
+    vo uint32_t GTPR;       /* 0x18: USART guard time and prescaler register */
+
+} USART_RegStruct_t;
+
+#define USART1       ((USART_RegStruct_t *)USART1_BASEADDR)
+#define USART2       ((USART_RegStruct_t *)USART2_BASEADDR)
+#define USART6       ((USART_RegStruct_t *)USART6_BASEADDR)
+
+
 
 
 /* Clock enable macros for GPIO peripherals */
@@ -316,7 +335,6 @@ typedef struct
 #define SPI1_CLOCK_EN()       (RCC->APB2ENR |= (1U << 12))
 #define SPI2_CLOCK_EN()       (RCC->APB1ENR |= (1U << 14))
 #define SPI3_CLOCK_EN()       (RCC->APB1ENR |= (1U << 15))
-#define SPI4_CLOCK_EN()       (RCC->APB2ENR |= (1U << 13))
 
 
 /* Clock enable macros for USART peripherals */
@@ -353,7 +371,6 @@ typedef struct
 #define SPI1_CLOCK_DI()       (RCC->APB2ENR &= ~(1U << 12))
 #define SPI2_CLOCK_DI()       (RCC->APB1ENR &= ~(1U << 14))
 #define SPI3_CLOCK_DI()       (RCC->APB1ENR &= ~(1U << 15))
-#define SPI4_CLOCK_DI()       (RCC->APB2ENR &= ~(1U << 13))
 
 
 /* Clock disable macros for USART peripherals */
@@ -395,11 +412,14 @@ typedef struct
 #define SPI1_REG_RESET()   do { (RCC->APB2RSTR |=  (1U << 12)); (RCC->APB2RSTR &= ~(1U << 12)); } while(0)
 #define SPI2_REG_RESET()   do { (RCC->APB1RSTR |=  (1U << 14)); (RCC->APB1RSTR &= ~(1U << 14)); } while(0)
 #define SPI3_REG_RESET()   do { (RCC->APB1RSTR |=  (1U << 15)); (RCC->APB1RSTR &= ~(1U << 15)); } while(0)
-#define SPI4_REG_RESET()   do { (RCC->APB2RSTR |=  (1U << 13)); (RCC->APB2RSTR &= ~(1U << 13)); } while(0)
 
 #define I2C1_REG_RESET()    do { (RCC->APB1RSTR |=  (1U << 21)); (RCC->APB1RSTR &= ~(1U << 21)); } while (0)
 #define I2C2_REG_RESET()    do { (RCC->APB1RSTR |=  (1U << 22)); (RCC->APB1RSTR &= ~(1U << 22)); } while (0)
 #define I2C3_REG_RESET()    do { (RCC->APB1RSTR |=  (1U << 23)); (RCC->APB1RSTR &= ~(1U << 23)); } while (0)
+
+#define USART1_REG_RESET()  do { (RCC->APB2RSTR |=  (1U << 4));  (RCC->APB2RSTR &= ~(1U << 4));  } while (0)
+#define USART2_REG_RESET()  do { (RCC->APB1RSTR |=  (1U << 17)); (RCC->APB1RSTR &= ~(1U << 17)); } while (0)
+#define USART6_REG_RESET()  do { (RCC->APB2RSTR |=  (1U << 5));  (RCC->APB2RSTR &= ~(1U << 5));  } while (0)
 
 
  
@@ -466,7 +486,13 @@ typedef struct
 #define IRQ_NO_SPI1        35U    /* SPI1 global interrupt */
 #define IRQ_NO_SPI2        36U    /* SPI2 global interrupt */
 #define IRQ_NO_SPI3        51U    /* SPI3 global interrupt */
-#define IRQ_NO_SPI4        84U    /* SPI4 global interrupt */
+
+/*
+ * USART IRQ number definitions
+ */
+#define IRQ_NO_USART1      37U    /* USART1 global interrupt */
+#define IRQ_NO_USART2      38U    /* USART2 global interrupt */
+#define IRQ_NO_USART6      71U    /* USART6 global interrupt */
 
 
 #endif /* INC_STM32F401RE_H_ */
