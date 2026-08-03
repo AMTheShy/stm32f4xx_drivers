@@ -443,6 +443,9 @@ typedef struct
 #define FLAG_RESET     RESET
 #define FLAG_SET       SET
 
+#define PRESSED         SET
+#define RELEASED        RESET 
+
 
  /*
   * This macro returns the port code for a given GPIOx base address.

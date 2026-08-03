@@ -1,4 +1,4 @@
-#ifndef stm32F401Re_gpio_driver.c
+﻿#ifndef stm32F401Re_gpio_driver.c
 #define stm32F401Re_gpio_driver.c
 
 #include "stm32F401Re_gpio_driver.h"
@@ -85,9 +85,19 @@ void GPIO_PeriClockControl(GPIO_RegStruct_t* pGPIOx, uint8_t EnorDi)
  */
 void GPIO_Init(GPIO_Pin_Handle_t* pGPIOHandle) {
 
+
+	uint32_t temp = 0U;
+
+	temp = pGPIOHandle->GPIO_pin_config.GPIO_PinPuPdControl
+		<< (2 * pGPIOHandle->GPIO_pin_config.GPIO_PinNumber);
+
+	pGPIOHandle->pGPIOx->PUPDR &= ~(0x3 << (2 * pGPIOHandle->GPIO_pin_config.GPIO_PinNumber));
+
+	pGPIOHandle->pGPIOx->PUPDR |= temp;
+
 	if (pGPIOHandle->GPIO_pin_config.GPIO_PinMode <= GPIO_MODE_ANALOG) {
-	
-		uint32_t temp = 0U;
+
+		temp = 0U;
 
 		/* 1. Configure the mode of GPIO pin */
 		temp = pGPIOHandle->GPIO_pin_config.GPIO_PinMode
@@ -107,18 +117,6 @@ void GPIO_Init(GPIO_Pin_Handle_t* pGPIOHandle) {
 		pGPIOHandle->pGPIOx->OTSPEEDR &= ~(0x3 << (2 * pGPIOHandle->GPIO_pin_config.GPIO_PinNumber));
 
 		pGPIOHandle->pGPIOx->OTSPEEDR |= temp;
-
-
-		/* 3. Configure pull-up / pull-down settings */
-		temp = 0U;
-
-		temp = pGPIOHandle->GPIO_pin_config.GPIO_PinPuPdControl
-			<< (2 * pGPIOHandle->GPIO_pin_config.GPIO_PinNumber);
-
-		pGPIOHandle->pGPIOx->PUPDR &= ~(0x3 << (2 * pGPIOHandle->GPIO_pin_config.GPIO_PinNumber));
-
-		pGPIOHandle->pGPIOx->PUPDR |= temp;
-
 
 		/* 4. Configure output type */
 		temp = 0U;
@@ -174,6 +172,7 @@ void GPIO_Init(GPIO_Pin_Handle_t* pGPIOHandle) {
 		uint8_t portBinary = GPIO_BASEADDR_TO_CODE(pGPIOHandle->pGPIOx);
 
 		SYSCFG_CLOCK_EN();
+		SYSCFG->EXTICR[temp1] &= ~(0xFU << (4U * temp2));
 		SYSCFG->EXTICR[temp1] |= (portBinary << 4 * temp2);
 		
 		
