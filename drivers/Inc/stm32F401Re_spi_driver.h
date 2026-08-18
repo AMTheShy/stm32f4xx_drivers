@@ -204,6 +204,11 @@ void SPI_PeriClockControl(SPI_RegStruct_t* pSPIx, uint8_t EnorDi);
 void SPI_Init(SPI_Handle_t* pSPIHandle);
 void SPI_DeInit(SPI_RegStruct_t* pSPIx);
 
+/*
+   Get any flag status
+*/
+
+uint8_t SPI_GetFlagStatus(SPI_RegStruct_t* pSPIx, uint32_t FlagName);
 
 /*
  * Data Send and Receive

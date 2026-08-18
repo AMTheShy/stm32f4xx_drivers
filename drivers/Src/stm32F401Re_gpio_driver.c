@@ -85,6 +85,8 @@ void GPIO_PeriClockControl(GPIO_RegStruct_t* pGPIOx, uint8_t EnorDi)
  */
 void GPIO_Init(GPIO_Pin_Handle_t* pGPIOHandle) {
 
+	GPIO_PeriClockControl(pGPIOHandle->pGPIOx, ENABLE);
+
 
 	uint32_t temp = 0U;
 

@@ -73,8 +73,6 @@ int main(void)
 
     Button.GPIO_pin_config.GPIO_PinPuPdControl = GPIO_PIN_PU;
 
-    GPIO_PeriClockControl(GPIOC, ENABLE);
-
     GPIO_Init(&LED);
 
     GPIO_Init(&Button);
