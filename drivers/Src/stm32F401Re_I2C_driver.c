@@ -166,8 +166,12 @@ static void I2C_MasterHandleRXNEInterrupt(I2C_Handle_t* pI2CHandle)
 		//close the I2C data reception and notify the application
 
 		//1. generate the stop condition
-		if (pI2CHandle->Sr == I2C_DISABLE_SR)
+		if (pI2CHandle->Sr == I2C_DISABLE_SR) {
+			
 			I2C_GenerateStopCondition(pI2CHandle->pI2Cx);
+		
+		}
+			
 
 		//2 . Close the I2C rx
 		I2C_CloseReceiveData(pI2CHandle);
@@ -179,27 +183,35 @@ static void I2C_MasterHandleRXNEInterrupt(I2C_Handle_t* pI2CHandle)
 
 static void I2C_CloseSendData(I2C_Handle_t* pI2CHandle)
 {
-	pI2CHandle->pI2Cx->CR2 &= ~(1U << I2C_CR2_ITBUFEN);
-	pI2CHandle->pI2Cx->CR2 &= ~(1U << I2C_CR2_ITERREN);
-	pI2CHandle->pTxBuffer = NULL;
-	pI2CHandle->TxLen = 0U;
+	//Implement the code to disable ITBUFEN Control Bit
+	pI2CHandle->pI2Cx->CR2 &= ~(1 << I2C_CR2_ITBUFEN);
+
+	//Implement the code to disable ITEVFEN Control Bit
+	pI2CHandle->pI2Cx->CR2 &= ~(1 << I2C_CR2_ITEVTEN);
+
+
 	pI2CHandle->TxRxState = I2C_READY;
+	pI2CHandle->pTxBuffer = NULL;
+	pI2CHandle->TxLen = 0;
+
 }
 
 static void I2C_CloseReceiveData(I2C_Handle_t* pI2CHandle)
 {
-	pI2CHandle->pI2Cx->CR2 &= ~(1U << I2C_CR2_ITBUFEN);
-	pI2CHandle->pI2Cx->CR2 &= ~(1U << I2C_CR2_ITERREN);
-	pI2CHandle->pRxBuffer = NULL;
-	pI2CHandle->RxLen = 0U;
-	pI2CHandle->RxSize = 0U;
-	pI2CHandle->TxRxState = I2C_READY;
+	//Implement the code to disable ITBUFEN Control Bit
+	pI2CHandle->pI2Cx->CR2 &= ~(1 << I2C_CR2_ITBUFEN);
 
-	if (pI2CHandle->I2C_Config.I2C_ACKControl ==
-		I2C_ACK_ENABLE)
+	//Implement the code to disable ITEVFEN Control Bit
+	pI2CHandle->pI2Cx->CR2 &= ~(1 << I2C_CR2_ITEVTEN);
+
+	pI2CHandle->TxRxState = I2C_READY;
+	pI2CHandle->pRxBuffer = NULL;
+	pI2CHandle->RxLen = 0;
+	pI2CHandle->RxSize = 0;
+
+	if (pI2CHandle->I2C_Config.I2C_ACKControl == I2C_ACK_ENABLE)
 	{
-		I2C_ManageAcking(pI2CHandle->pI2Cx,
-						 I2C_ACK_ENABLE);
+		I2C_ManageAcking(pI2CHandle->pI2Cx, ENABLE);
 	}
 }
 
@@ -270,10 +282,16 @@ void I2C_DeInit(I2C_RegStruct_t* pI2Cx)
 }
 
 void I2C_Init(I2C_Handle_t* pI2CHandle)
+
 {
+
+	I2C_PeriClockControl(pI2CHandle->pI2Cx, ENABLE);
+
 	uint32_t tempreg = 0U;
 	uint32_t pclk1 = 0U;
 	uint16_t ccr_value = 0U;
+
+
 
 	/*
 	 * 1. Configure ACK control bit in I2C_CR1
@@ -428,7 +446,7 @@ void I2C_Init(I2C_Handle_t* pI2CHandle)
 /*
  * Data Send and Receive
  */
-void I2C_MasterSendData(I2C_Handle_t* pI2CHandle,uint8_t* pTxBuffer,uint32_t Len,uint8_t SlaveAddr)
+void I2C_MasterSendData(I2C_Handle_t* pI2CHandle,uint8_t* pTxBuffer,uint32_t Len,uint8_t SlaveAddr, uint8_t Sr)
 {
 	/*
 	 * 1. Generate the START condition
@@ -501,14 +519,20 @@ void I2C_MasterSendData(I2C_Handle_t* pI2CHandle,uint8_t* pTxBuffer,uint32_t Len
 	 *
 	 * Note: Generating STOP automatically clears the BTF flag.
 	 */
-	I2C_GenerateStopCondition(pI2CHandle->pI2Cx);
+
+	if (Sr == I2C_DISABLE_SR) {
+	
+		I2C_GenerateStopCondition(pI2CHandle->pI2Cx);
+
+	}
+	
 }
 
 
 
 
 
-void I2C_MasterReceiveData(I2C_Handle_t* pI2CHandle,uint8_t* pRxBuffer,uint8_t Len,uint8_t SlaveAddr)
+void I2C_MasterReceiveData(I2C_Handle_t* pI2CHandle,uint8_t* pRxBuffer,uint8_t Len,uint8_t SlaveAddr, uint8_t Sr)
 {
 	/* 1. Generate the START condition */
 	I2C_GenerateStartCondition(pI2CHandle->pI2Cx);
@@ -544,11 +568,20 @@ void I2C_MasterReceiveData(I2C_Handle_t* pI2CHandle,uint8_t* pRxBuffer,uint8_t L
 	}
 
 	/* Procedure to read only one byte from slave */
-	if (pI2CHandle->RxSize == 1U){
+	if (Len == 1U){
+
+		I2C_ManageAcking(pI2CHandle->pI2Cx, DISABLE);
 
 		/* Clear ADDR by reading SR1 followed by SR2 ? acking disabled in the  clearADDRFlag function*/
 
 		I2C_ClearADDRFlag(pI2CHandle);
+
+		
+		if (Sr == I2C_DISABLE_SR) {
+
+			I2C_GenerateStopCondition(pI2CHandle->pI2Cx);
+
+		}
 
 
 		/* Wait until receive data register is not empty */
@@ -557,69 +590,50 @@ void I2C_MasterReceiveData(I2C_Handle_t* pI2CHandle,uint8_t* pRxBuffer,uint8_t L
 			/* Wait */
 		}
 
-		/*
-		 * Generate STOP before clearing ADDR, following the
-		 * single-byte receive sequence shown in the lecture.
-		 */
-		if (pI2CHandle->Sr = I2C_DISABLE_SR){
-		
-			I2C_GenerateStopCondition(pI2CHandle->pI2Cx);
-		
-		}
-		
 
 
 		/* Read the received byte */
-		*pRxBuffer = (uint8_t)pI2CHandle->pI2Cx->DR;
+		*pRxBuffer = pI2CHandle->pI2Cx->DR;
 
 		
 	}
 
 	/* Procedure to read more than one byte from slave */
-	if (pI2CHandle->RxSize > 1U)
+	if (Len > 1U)
 	{
 
-		/* Clear ADDR and begin the data phase */
+		//clear the ADDR flag
 		I2C_ClearADDRFlag(pI2CHandle);
 
-		/* Read until all requested bytes have been received */
-		for (uint32_t i = Len; i > 0U; i--)
+		//read the data until Len becomes zero
+		for (uint32_t i = Len; i > 0; i--)
 		{
-			/* Wait until a received byte is available */
-			while (!I2C_GetFlagStatus(pI2CHandle->pI2Cx,
-				I2C_FLAG_RXNE))
+			//wait until RXNE becomes 1
+			while (!I2C_GetFlagStatus(pI2CHandle->pI2Cx, I2C_FLAG_RXNE));
+
+			if (i == 2) //if last 2 bytes are remaining
 			{
-				/* Wait */
-			}
+				//Disable Acking
+				I2C_ManageAcking(pI2CHandle->pI2Cx, I2C_ACK_DISABLE);
 
-			/*
-			 * When only two bytes remain, disable ACK before reading
-			 * the second-last byte.
-			 *
-			 * After the second-last byte is read, the final byte will
-			 * be received with NACK, ending the receive operation.
-			 */
-			if (i == 2U)
-			{
-				I2C_ManageAcking(pI2CHandle->pI2Cx,
-					I2C_ACK_DISABLE);
-
-				/* Generate STOP for the end of the transaction */
-
-				if (pI2CHandle->Sr == I2C_ENABLE_SR) {
+				//generate STOP condition
+				if (Sr == I2C_DISABLE_SR) {
 				
 					I2C_GenerateStopCondition(pI2CHandle->pI2Cx);
-
-				}
 				
+				}
+					
+
 			}
 
-			/* Read the received byte into the application buffer */
-			*pRxBuffer = (uint8_t)pI2CHandle->pI2Cx->DR;
+			//read the data from data register in to buffer
+			*pRxBuffer = pI2CHandle->pI2Cx->DR;
 
-			/* Move to the next buffer location */
+			//increment the buffer address
 			pRxBuffer++;
+
 		}
+		
 	}
 
 	/*
@@ -1105,6 +1119,19 @@ void I2C_ER_IRQHandling(I2C_Handle_t* pI2CHandle)
 
 		/* Notify the application about the error */
 		I2C_ApplicationEventCallback(pI2CHandle, I2C_ERROR_TIMEOUT);
+	}
+}
+
+
+void I2C_PeripheralControl(I2C_RegStruct_t* pI2Cx, uint8_t EnorDi)
+{
+	if (EnorDi == ENABLE)
+	{
+		pI2Cx->CR1 |= (1U << I2C_CR1_PE);
+	}
+	else
+	{
+		pI2Cx->CR1 &= ~(1U << I2C_CR1_PE);
 	}
 }
 

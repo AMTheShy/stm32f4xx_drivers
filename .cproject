@@ -73,7 +73,7 @@
 					</folderInfo>
 					<sourceEntries>
 						<entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="Inc"/>
-						<entry excluding="004ReceiveData.c|003SpiSendData.c|002LEDInterruptToggle.c|001ledPollingToggle.c|ledPollingToggle.c" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="Src"/>
+						<entry excluding="007I2CReceiveData.c|006I2CSendData.c|005InterruptTest .c|004ReceiveData.c|003SpiSendData.c|002LEDInterruptToggle.c|001ledPollingToggle.c|ledPollingToggle.c" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="Src"/>
 						<entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="Startup"/>
 						<entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="drivers"/>
 					</sourceEntries>
@@ -148,7 +148,7 @@
 					</folderInfo>
 					<sourceEntries>
 						<entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="Inc"/>
-						<entry excluding="004ReceiveData.c|003SpiSendData.c|002LEDInterruptToggle.c|001ledPollingToggle.c|ledPollingToggle.c" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="Src"/>
+						<entry excluding="007I2CReceiveData.c|006I2CSendData.c|005InterruptTest .c|004ReceiveData.c|003SpiSendData.c|002LEDInterruptToggle.c|001ledPollingToggle.c|ledPollingToggle.c" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="Src"/>
 						<entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="Startup"/>
 					</sourceEntries>
 				</configuration>
